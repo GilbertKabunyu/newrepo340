@@ -5,6 +5,7 @@
 /* ***********************
  * Require Statements
  *************************/
+const cookieParser = require("cookie-parser")
 const bodyParser = require("body-parser") // wk 4
 const session = require ("express-session") // week 4
 const pool = require ("./database/") // week 4
@@ -53,6 +54,9 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded(
   {extended: true}
 )) // for parsing application/ x-www-form-unlencoded
+
+//cookieparser middleware
+app.use(cookieParser())
 
 /* ***********************
  * Routes

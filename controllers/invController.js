@@ -31,11 +31,11 @@ invCont.buildByInventoryId = async function (req, res, next) {
       return res.status(404).send("Vehicle not found.");
     }
 
-    const vehicleView = await utilities.buildVehicleDetail(data[0]);
+    const vehicleView = await utilities.buildVehicleDetail(data);
     let nav = await utilities.getNav();
 
-    res.render("./inventory/detail", {
-      title: `${data.inv_year} ${data[0].inv_make} ${data[0].inv_model}`,
+    res.render("./inventory/details", {
+      title: `${data.inv_year} ${data.inv_make} ${data.inv_model}`,
       nav,
       vehicleView,
     });

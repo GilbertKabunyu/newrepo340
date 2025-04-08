@@ -414,7 +414,7 @@ section.car-listing dl dt {
   bottom: 0;
   right: 5px;
   background-color: transparent;
-  background-image: url("/images/site/eye_open.svg");
+  background-image: url("/images/site/eye_open.jpg");
   background-size: contain;
   height: 2rem;
   width: 2rem;
@@ -422,7 +422,7 @@ section.car-listing dl dt {
 }
 
 .input-box .reveal-button.active {
-  background-image: url("/images/site/eye_closed.svg");
+  background-image: url("/images/site/eye_closed.jpg");
 }
 
 .fine-print {

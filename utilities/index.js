@@ -1,22 +1,35 @@
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 const invModel = require("../models/inventory-model");
 const Util = {};
+
+/****************************************
+ * @typedef {Object} Message
+ * @property {number} message_id
+ * @property {string} message_subject
+ * @property {string} message_body
+ * @property {Date} message_created
+ * @property {number} message_to
+ * @property {number} message_from
+ * @property {boolean} message_read
+ * @property {boolean} message_archived
+ ********************************************/
 
 /*************************************
  * Constructs the nav HTML unordered list
  *****************************************/
 Util.getNav = async function (req, res, next) {
   let data = await invModel.getClassification();
-  //console.log(data)
   let list = "<ul>";
-  list += '<li><a href="/" title="home page">Home</a></li>';
+  list += '<li><a href="/" title="Home page">Home</a></li>'; // Corrected title
   data.rows.forEach((row) => {
     list += "<li>";
     list +=
       '<a href="/inv/type/' +
       row.classification_id +
-      '"title= See our inventory of' +
+      '" title="See our inventory of ' + // Added quotes and space
       row.classification_name +
-      ' vehicles">' +
+      ' vehicles">' + // Added quotes and space
       row.classification_name +
       "</a>";
     list += "</li>";
@@ -94,9 +107,9 @@ Util.buildVehicleDetail = async function (data) {
           </div>
           <div>
             ${Number.parseFloat(data.inv_price).toLocaleString("en-US", {
-              style: "currency",
-              currency: "USD",
-            })}
+      style: "currency",
+      currency: "USD",
+    })}
           </div>
           <div class="description">
             <p>
@@ -105,8 +118,8 @@ Util.buildVehicleDetail = async function (data) {
             <dl>
               <dt>MILEAGE</dt>
               <dd>${data.inv_miles.toLocaleString("en-US", {
-                style: "decimal",
-              })}</dd>
+      style: "decimal",
+    })}</dd>
               <dt>COLOR</dt>
               <dd>${data.inv_color}</dd>
               <dt>CLASS</dt>
@@ -117,7 +130,6 @@ Util.buildVehicleDetail = async function (data) {
         </div>
       </section>
     `;
-   
   } else {
     listingHTML = `
       <p>Sorry, no matching vehicles could be found.</p>
@@ -126,9 +138,10 @@ Util.buildVehicleDetail = async function (data) {
   return listingHTML;
 };
 
-
 /*********************************************
  * Build an HTML select element with classification data
+ * @param {int} classification_id
+ * @returns {string}
  *******************************************/
 Util.buildClassificationList = async function (classification_id = null) {
   let data = await invModel.getClassification();
@@ -144,11 +157,10 @@ Util.buildClassificationList = async function (classification_id = null) {
       classificationList += " selected ";
     }
     classificationList += ">" + row.classification_name + "</option>";
-  })
+  });
   classificationList += "</select>";
   return classificationList;
-}
-
+};
 
 /* ****************************************
  * Middleware For Handling Errors
@@ -157,5 +169,118 @@ Util.buildClassificationList = async function (classification_id = null) {
  **************************************** */
 Util.handleErrors = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
+
+/* ****************************************
+ * Middleware to check token validity
+ **************************************** */
+Util.checkJWTToken = (req, res, next) => {
+  if (req.cookies.jwt) {
+    jwt.verify(
+      req.cookies.jwt,
+      process.env.ACCESS_TOKEN_SECRET,
+      function (err, accountData) {
+        if (err) {
+          req.flash("Please log in");
+          res.clearCookie("jwt");
+          return res.redirect("/account/login");
+        }
+        res.locals.accountData = accountData;
+        res.locals.loggedin = 1;
+        next();
+      }
+    );
+  } else {
+    next();
+  }
+};
+
+/* ****************************************
+ *  Check Login
+ * ************************************ */
+Util.checkLogin = (req, res, next) => {
+  if (res.locals.loggedin) {
+    next();
+  } else {
+    req.flash("notice", "Please log in.");
+    return res.redirect("/account/login");
+  }
+};
+
+/*****************************************
+ *  Check authorization
+ **************************************/
+Util.checkAuthorizationManager = (req, res, next) => {
+  if (req.cookies.jwt) {
+    jwt.verify(
+      req.cookies.jwt,
+      process.env.ACCESS_TOKEN_SECRET,
+      function (err, accountData) {
+        if (err) {
+          req.flash("Please log in");
+          res.clearCookie("jwt");
+          return res.redirect("/account/login");
+        }
+        if (
+          accountData.account_type == "Employee" ||
+          accountData.account_type == "Admin"
+        ) {
+          next();
+        } else {
+          req.flash("notice", "You are not authorized to modify inventory.");
+          return res.redirect("/account/login");
+        }
+      }
+    );
+  } else {
+    req.flash("notice", "You are not authorized to modify inventory.");
+    return res.redirect("/account/login");
+  }
+};
+
+/********************************************************
+ * Build an html table string from the message array
+ * @param {Array<Message>} messages
+ * @returns
+ *****************************************************/
+Util.buildInbox = (messages) => {
+  inboxList = `
+  <table>
+    <thead>
+      <tr>
+        <th>Received</th><th>Subject</th><th>From</th><th>Read</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  messages.forEach((message) => {
+    inboxList += `
+    <tr>
+      <td>${message.message_created.toLocaleString()}</td>
+      <td><a href="/message/view/${message.message_id}">${message.message_subject
+      }</a></td>
+      <td>${message.account_firstname} ${message.account_type}</td>
+      <td>${message.message_read ? "✓" : " "}</td>
+    </tr>`;
+  });
+
+  inboxList += `
+  </tbody>
+  </table> `;
+  return inboxList;
+};
+
+Util.buildRecipientList = (recipientData, preselected = null) => {
+  let list = `<select name="message_to" required>`;
+  list += '<option value="">Select a recipient</option>';
+
+  recipientData.forEach((recipient) => {
+    list += `<option ${preselected == recipient.account_id ? "selected" : ""
+      } value="${recipient.account_id}">${recipient.account_firstname} ${recipient.account_lastname
+      }</option>`;
+  });
+  list += "</select>";
+
+  return list;
+};
 
 module.exports = Util;

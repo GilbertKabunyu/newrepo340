@@ -1,18 +1,6 @@
-
-<%# unit 4, deliver register activity %>
-<% if (title)  { %>
-<h1><%= title %></h1>
-<% } else {res.redirect ('/')} %>
-
+<%# unit 4, deliver register activity %> 
+<h1><%- title %></h1>
 <%- messages() %>
-
-<% if (errors) { %>
-  <ul class="notice">
-    <% errors.array().forEach(error => { %>
-      <li><%= error.msg %></li>
-      <% }) %>
-  </ul>
-<% } %>
 
 <form class="input-box" action="/account/register" method="post">
   <label
@@ -49,21 +37,29 @@
       id="password"
       required
       autocomplete="new-password"
-      pattern="^(?=.\d)(?=.[a-z])(?=.[A-Z])(?=.[^a-zA-Z0-9])(?!.*\s).{12,}$"
-    /></label>
+      pattern="^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{12,}$"
+    /><span class="reveal-button active" id="passwordHide"
+      >hide password</span
+    ></label
+  >
   <span class="fine-print"
-    >Password must be at least 6 or 12 characters long, contain at least 1
-    capital letter, 1 number, and 1 special character.</span>
-    <span class="password-toggle" onclick="togglePasswordVisibility()"
-    >Show/Hide Password</span>
-    <input type="submit" value="REGISTER"/>
+    >Password must be 12 characters or longer, contain 1 capital letter, 1
+    number and 1 special character</span
+  >
+  <input type="submit" value="REGISTER" />
 </form>
 
 <script>
-  function togglePasswordVisibility() {
-    const passwordInput = document.getElementById("password");
-    const passwordType =
-      passwordInput.type === "password" ? "text" : "password";
-    passwordInput.type = passwordType;
-  }
+  const passwordInput = document.querySelector("#password");
+  const passwordHide = document.querySelector("#passwordHide");
+  passwordHide.addEventListener("click", () => {
+      if(passwordInput.getAttribute("type") == "password" ) {
+          passwordInput.setAttribute("type", "text");
+          passwordHide.classList.remove("active");
+      }
+      else {
+          passwordInput.setAttribute("type", "password");
+          passwordHide.classList.add("active");
+      }
+  })
 </script>

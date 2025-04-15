@@ -16,9 +16,10 @@ const app = express()
 const static = require("./routes/static")
 const baseController = require("./controllers/baseController")
 const inventoryRoute = require("./routes/inventoryRoute")
-const utilities = require("./utilities")
+const utilities = require("./utilities/index")
 const accountRoute = require("./routes/accountRoute")
 const intentionalErrorRoute = require("./routes/intentionalErrorRoute")
+const messageRoute = require("./routes/messageRoute")
 
 /* ***********************
  * View Engine and Templates
@@ -57,6 +58,8 @@ app.use(bodyParser.urlencoded(
 
 //cookieparser middleware
 app.use(cookieParser())
+// unit 5, login process activity
+app.use(utilities.checkJWTToken)
 
 /* ***********************
  * Routes
@@ -70,6 +73,8 @@ app.use("/inv", inventoryRoute)
 app.use("/ierror", intentionalErrorRoute)
 // Account routes
 app.use("/account", accountRoute)
+// Mesaages route
+app.use("/message", messageRoute);
 
 // File Not Found Route - must be last route in list
 app.use(async (req, res, next) => {
